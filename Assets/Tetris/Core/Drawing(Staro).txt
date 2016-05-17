@@ -1,0 +1,245 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using UnityEngine;
+
+namespace Tetris
+{
+    static class Drawing
+    {
+        // uglavnom cratanja sa GLom
+
+        public static void DrawAxis(Vector3int dimensions)
+        {
+            GL.Color(Color.red); GL.Begin(GL.LINES);
+            for (int i = 0; i < dimensions.X; ++i)
+            { GL.Vertex3(i, 0f, 0f); GL.Vertex3(i, 0f, dimensions.Z); GL.Vertex3(i, 0f, dimensions.Z); GL.Vertex3(i, dimensions.Y, dimensions.Z); }
+            GL.End(); GL.Color(Color.green); GL.Begin(GL.LINES);
+            for (int i = 0; i < dimensions.Y; ++i)
+            { GL.Vertex3(0f, i, dimensions.Z); GL.Vertex3(dimensions.X, i, dimensions.Z); GL.Vertex3(dimensions.X, i, 0f); GL.Vertex3(dimensions.X, i, dimensions.Z); }
+            GL.End(); GL.Color(Color.blue); GL.Begin(GL.LINES);
+            for (int i = 0; i < dimensions.Z; ++i)
+            { GL.Vertex3(0f, 0f, i); GL.Vertex3(dimensions.X, 0f, i); GL.Vertex3(dimensions.X, 0f, i); GL.Vertex3(dimensions.X, dimensions.Y, i); }
+            GL.End();
+
+            GL.Begin(GL.QUADS);
+            GL.Color(new Color(1, 0, 0, 0.2f));
+            GL.Vertex3(dimensions.X, 0, 0); GL.Vertex3(dimensions.X, dimensions.Y, 0); GL.Vertex3(dimensions.X, dimensions.Y, dimensions.Z); GL.Vertex3(dimensions.X, 0, dimensions.Z);
+            GL.End();
+
+            GL.Begin(GL.QUADS);
+            GL.Color(new Color(0, 1, 0, 0.2f));
+            GL.Vertex3(0, 0, 0); GL.Vertex3(dimensions.X, 0, 0); GL.Vertex3(dimensions.X, 0, dimensions.Z); GL.Vertex3(0f, 0, dimensions.Z);
+            GL.End();
+
+            GL.Begin(GL.QUADS);
+            GL.Color(new Color(0, 0, 1, 0.2f));
+            GL.Vertex3(0, 0, dimensions.Z); GL.Vertex3(dimensions.X, 0, dimensions.Z); GL.Vertex3(dimensions.X, dimensions.Y, dimensions.Z); GL.Vertex3(0f, dimensions.Y, dimensions.Z);
+            GL.End();
+
+        }
+
+        //smece
+        public static void DrawGrid(Vector3int dimensions)
+        {
+            GL.Begin(GL.LINES);
+            for (int i = 0; i < dimensions.X; ++i)
+                for (int j = 0; j < dimensions.Y; ++j)
+                { GL.Vertex3(i, j, 0f); GL.Vertex3(i, j, dimensions.Z - 1); }
+
+            for (int i = 0; i < dimensions.X; ++i)
+                for (int j = 0; j < dimensions.Z; ++j)
+                { GL.Vertex3(i, 0f, j); GL.Vertex3(i, dimensions.Y - 1, j); }
+            for (int i = 0; i < dimensions.Y; ++i)
+                for (int j = 0; j < dimensions.Z; ++j)
+                { GL.Vertex3(0f, i, j); GL.Vertex3(dimensions.X - 1, i, j); }
+
+            GL.End();
+        }
+
+        private static List<Color> cubeColors = new List<Color>() { Color.blue, Color.cyan, Color.gray, Color.green, Color.magenta, Color.red, Color.white, Color.yellow };
+
+        //  private static List<Texture2D> cubeTexs = new List<Texture2D>() {new Texture2D( Color.blue, Color.cyan, Color.gray, Color.green, Color.magenta, Color.red, Color.white, Color.yellow };
+
+        /*
+                public static void Line(int i1, int j1, int k1, int i2, int j2, int k2) 
+                { 
+                    GL.Vertex3(tempCenter.X + i1, tempCenter.Y + j1, tempCenter.Z + k1);
+                    GL.Vertex3(tempCenter.X + i2, tempCenter.Y + j2, tempCenter.Z + k2);
+                }
+
+                public static void Point(int i1, int j1, int k1) 
+                {
+
+                    GL.Vertex3(tempCenter.X + 0.5f + bla* (i1 - 0.5f), tempCenter.Y + 0.5f + bla * (j1-0.5f), tempCenter.Z + 0.5f + bla * (k1-0.5f)); 
+                }
+                */
+        public static Vector3int tempCenter;
+
+        public static void DrawCube(Vector3int center, int index)
+        {
+            Vector3 tempCenter = new Vector3(center.X, center.Y, center.Z);
+
+            GL.Begin(GL.QUADS);
+
+            GL.Color(cubeColors[index % cubeColors.Count]);
+            /*
+            skupa, uredna varijanta
+            Point(0, 0, 0); Point(1, 0, 0); Point(1, 1, 0); Point(0, 1, 0);
+            Point(0, 0, 0); Point(0, 0, 1); Point(0, 1, 1); Point(0, 1, 0);
+            Point(0, 0, 0); Point(1, 0, 0); Point(1, 0, 1); Point(0, 0, 1);
+
+            Point(1, 1, 1); Point(0, 1, 1); Point(0, 0, 1); Point(1, 0, 1);
+            Point(1, 1, 1); Point(1, 1, 0); Point(1, 0, 0); Point(1, 0, 1);
+            Point(1, 1, 1); Point(0, 1, 1); Point(0, 1, 0); Point(1, 1, 0);
+          */
+            if (cubeVsPrepared == null) PrepareCubeVs();
+
+            for (int i = 0; i < cubeVsPrepared.Length; ++i)
+                GL.Vertex(tempCenter + cubeVsPrepared[i]);
+
+
+            GL.End();
+
+
+
+            /* pokusaj optimizacije sa Graphics.DrawMesh umjesto GL-a
+            Mesh mesh = new Mesh();
+
+            if (cubeTs == null) BuildCubeTs();
+
+            Vector3[] thisCubeVs = new Vector3[24];
+
+            for (int i = 0; i < 24; ++i)
+                thisCubeVs[i] = new Vector3(center.X,center.Y,center.Z) + halfVec + bla * (cubeVs[i] - halfVec);
+
+            mesh.vertices = thisCubeVs;
+            mesh.uv = cubeUVs;
+            mesh.triangles = cubeTs;
+            mesh.RecalculateNormals();
+
+            var shader = Shader.Find("Self-Illumin/Diffuse");
+            var mat = new Material(shader);
+         //   Texture2D tex = new Texture2D(1, 1);
+            mat.color = cubeColors[index % cubeColors.Count];
+           // mat.mainTexture = tex;//cubeTexs[index % cubeTexs.Count];
+
+            Graphics.DrawMesh(mesh, Vector3.zero, Quaternion.identity, mat, 0);
+            */
+
+            /*
+            Line(0, 0, 0, 1, 0, 0);Line(0, 1, 0, 1, 1, 0);
+            Line(0, 0, 1, 1, 0, 1); Line(0, 1, 1, 1, 1, 1);
+
+            Line(0, 0, 0, 0, 1, 0); Line(1, 0, 0, 1, 1, 0);
+            Line(0, 0, 1, 0, 1, 1); Line(1, 0, 1, 1, 1, 1);
+
+            Line(0, 0, 0, 0, 0, 1); Line(1, 0, 0, 1, 0, 1);
+            Line(0, 1, 0, 0, 1, 1); Line(1, 1, 0, 1, 1, 1);
+       */
+
+            GL.Begin(GL.LINES);
+            GL.Color(Color.black);
+
+            for (int i = 0; i < cubeLs.Length; i += 2)
+            {
+                GL.Vertex(tempCenter + cubeLs[i]);
+                GL.Vertex(tempCenter + cubeLs[i + 1]);
+            }
+
+            GL.End();
+
+        }
+
+        static Vector3 halfVec = new Vector3(0.5f, 0.5f, 0.5f);
+        static float bla = 0.98f;
+
+        /*
+        static int[] cubeDrawPoints = new int[] 
+        {
+            0, 0, 0,            1, 0, 0,            1, 1, 0,            0, 1, 0,
+            0, 0, 0,            0, 0, 1,            0, 1, 1,            0, 1, 0,
+            0, 0, 0,            1, 0, 0,            1, 0, 1,            0, 0, 1,
+
+            1, 1, 1,            0, 1, 1,            0, 0, 1,            1, 0, 1,
+            1, 1, 1,            1, 1, 0,            1, 0, 0,            1, 0, 1,
+            1, 1, 1,            0, 1, 1,            0, 1, 0,            1, 1, 0,
+        };
+        */
+
+        static Vector3[] cubeVs = new Vector3[] 
+        {
+            new Vector3(0, 0, 0),  new Vector3(1, 0, 0),  new Vector3(1, 1, 0),  new Vector3(0, 1, 0),
+            new Vector3(0, 0, 0),  new Vector3(0, 0, 1),  new Vector3(0, 1, 1),  new Vector3(0, 1, 0),
+            new Vector3(0, 0, 0),  new Vector3(1, 0, 0),  new Vector3(1, 0, 1),  new Vector3(0, 0, 1),
+
+            new Vector3(1, 1, 1),  new Vector3(0, 1, 1),  new Vector3(0, 0, 1),  new Vector3(1, 0, 1),
+            new Vector3(1, 1, 1),  new Vector3(1, 1, 0),  new Vector3(1, 0, 0),  new Vector3(1, 0, 1),
+            new Vector3(1, 1, 1),  new Vector3(0, 1, 1),  new Vector3(0, 1, 0),  new Vector3(1, 1, 0)
+        };
+
+        static Vector3[] cubeVsPrepared;
+        static void PrepareCubeVs()
+        {
+            cubeVsPrepared = new Vector3[24];
+
+            for (int i = 0; i < cubeVs.Length; ++i)
+                cubeVsPrepared[i] = halfVec + bla * (cubeVs[i] - halfVec);
+
+        }
+
+        /*normale i trokuti za Graphics.DrawMesh
+        static Vector2[] cubeUVs = new Vector2[] 
+        {
+            new Vector2(0, 0),  new Vector2(1, 0),  new Vector2(1, 1),  new Vector2(0, 1),
+            new Vector2(0, 0),  new Vector2(0, 1),  new Vector2(1, 1),  new Vector2(1, 0),
+            new Vector2(0, 0),  new Vector2(1, 0),  new Vector2(1, 1),  new Vector2(0, 1),
+
+            new Vector2(1, 1),  new Vector2(0, 1),  new Vector2(0, 0),  new Vector2(1, 0),
+            new Vector2(1, 1),  new Vector2(1, 0),  new Vector2(0, 0),  new Vector2(0, 1),
+            new Vector2(1, 1),  new Vector2(0, 1),  new Vector2(0, 0),  new Vector2(1, 0)
+        };
+
+        static int[] cubeTs;
+
+        static void  BuildCubeTs ()
+        {
+            cubeTs = new int[36];
+            for(int side=0;side<6;++side)
+            {
+                cubeTs[6 * side + 0] = 0 + side * 4;
+                cubeTs[6 * side + 1] = 3 + side * 4;
+                cubeTs[6 * side + 2] = 1 + side * 4;
+                cubeTs[6 * side + 3] = 2 + side * 4;
+                cubeTs[6 * side + 4] = 1 + side * 4;
+                cubeTs[6 * side + 5] = 3 + side * 4;
+            }
+        }
+        */
+        /*
+        static int[] cubeDrawLines = new int[] 
+        {
+            0, 0, 0, 1, 0, 0,    0, 1, 0, 1, 1, 0,
+            0, 0, 1, 1, 0, 1,    0, 1, 1, 1, 1, 1,
+
+            0, 0, 0, 0, 1, 0,    1, 0, 0, 1, 1, 0,
+            0, 0, 1, 0, 1, 1,    1, 0, 1, 1, 1, 1,
+
+            0, 0, 0, 0, 0, 1,    1, 0, 0, 1, 0, 1,
+            0, 1, 0, 0, 1, 1,    1, 1, 0, 1, 1, 1,
+        };
+        */
+        static Vector3[] cubeLs = new Vector3[] 
+        {
+            new Vector3(0, 0, 0),  new Vector3( 1, 0, 0),  new Vector3(0, 1, 0),  new Vector3( 1, 1, 0),
+            new Vector3(0, 0, 1),  new Vector3( 1, 0, 1),  new Vector3(0, 1, 1),  new Vector3( 1, 1, 1),
+
+            new Vector3(0, 0, 0),  new Vector3( 0, 1, 0),  new Vector3(1, 0, 0),  new Vector3( 1, 1, 0),
+            new Vector3(0, 0, 1),  new Vector3( 0, 1, 1),  new Vector3(1, 0, 1),  new Vector3( 1, 1, 1),
+
+            new Vector3(0, 0, 0),  new Vector3( 0, 0, 1),  new Vector3(1, 0, 0),  new Vector3( 1, 0, 1),
+            new Vector3(0, 1, 0),  new Vector3( 0, 1, 1),  new Vector3(1, 1, 0),  new Vector3( 1, 1, 1)
+        };
+    }
+}
